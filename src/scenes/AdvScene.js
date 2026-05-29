@@ -28,16 +28,16 @@ export class AdvScene extends Phaser.Scene {
     this.txtBox = this.add.graphics();
     this.txtBox.lineStyle(2, 0xffffff, 1).fillStyle(0x000000, 1);
     this.txtBox.fillRoundedRect(8, CENTER_Y + 7, GAME_WIDTH - 16, 180, 6).strokeRoundedRect(8, CENTER_Y + 7, GAME_WIDTH - 16, 180, 6);
-    this.txt = this.add.text(18, CENTER_Y + 30, '', {
-      fontFamily: 'sans-serif', fontSize: '15px', color: '#ffffff', lineSpacing: 4,
-      wordWrap: { width: GAME_WIDTH - 36 },
+    this.txt = this.add.text(15, CENTER_Y + 30, '', {
+      fontFamily: 'sans-serif', fontSize: '16px', fontStyle: 'bold', color: '#ffffff', lineSpacing: 4,
+      wordWrap: { width: 230 },
     }).setOrigin(0, 0);
 
     // Name box ("G") — on top of the dialogue box
     this.nameBox = this.add.graphics();
     this.nameBox.lineStyle(2, 0xffffff, 1).fillStyle(0x000000, 1);
     this.nameBox.fillRoundedRect(16, CENTER_Y - 5, 80, 24, 6).strokeRoundedRect(16, CENTER_Y - 5, 80, 24, 6);
-    this.add.text(34, CENTER_Y + 2, 'G', { fontFamily: 'sans-serif', fontSize: '14px', color: '#ffffff' }).setOrigin(0, 0);
+    this.add.text(50, CENTER_Y - 4, 'G', { fontFamily: 'sans-serif', fontSize: '16px', fontStyle: 'bold', color: '#ffffff' }).setOrigin(0, 0);
 
     // Blinking "continue" indicator at the bottom of the dialogue box.
     this.hint = this.add.text(GAME_WIDTH - 26, CENTER_Y + 165, '▼', {
