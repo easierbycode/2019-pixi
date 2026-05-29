@@ -24,13 +24,7 @@ export class AdvScene extends Phaser.Scene {
     // Foreground overlay tiled below the background
     this.cover = this.add.tileSprite(0, 220, GAME_WIDTH, GAME_HEIGHT - 220, 'game_asset', 'stagebgOver.gif').setOrigin(0, 0);
 
-    // Name box ("G")
-    this.nameBox = this.add.graphics();
-    this.nameBox.lineStyle(2, 0xffffff, 1).fillStyle(0x000000, 1);
-    this.nameBox.fillRoundedRect(16, CENTER_Y - 5, 80, 24, 6).strokeRoundedRect(16, CENTER_Y - 5, 80, 24, 6);
-    this.add.text(34, CENTER_Y + 2, 'G', { fontFamily: 'sans-serif', fontSize: '14px', color: '#ffffff' }).setOrigin(0, 0);
-
-    // Dialogue box
+    // Dialogue box (drawn first, behind the name box)
     this.txtBox = this.add.graphics();
     this.txtBox.lineStyle(2, 0xffffff, 1).fillStyle(0x000000, 1);
     this.txtBox.fillRoundedRect(8, CENTER_Y + 7, GAME_WIDTH - 16, 180, 6).strokeRoundedRect(8, CENTER_Y + 7, GAME_WIDTH - 16, 180, 6);
@@ -38,6 +32,12 @@ export class AdvScene extends Phaser.Scene {
       fontFamily: 'sans-serif', fontSize: '15px', color: '#ffffff', lineSpacing: 4,
       wordWrap: { width: GAME_WIDTH - 36 },
     }).setOrigin(0, 0);
+
+    // Name box ("G") — on top of the dialogue box
+    this.nameBox = this.add.graphics();
+    this.nameBox.lineStyle(2, 0xffffff, 1).fillStyle(0x000000, 1);
+    this.nameBox.fillRoundedRect(16, CENTER_Y - 5, 80, 24, 6).strokeRoundedRect(16, CENTER_Y - 5, 80, 24, 6);
+    this.add.text(34, CENTER_Y + 2, 'G', { fontFamily: 'sans-serif', fontSize: '14px', color: '#ffffff' }).setOrigin(0, 0);
 
     // Blinking "continue" indicator at the bottom of the dialogue box.
     this.hint = this.add.text(GAME_WIDTH - 26, CENTER_Y + 165, '▼', {
