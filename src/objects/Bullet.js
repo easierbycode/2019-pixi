@@ -30,6 +30,10 @@ export class Bullet extends BaseUnit {
 
     const w = this.character.width, h = this.character.height;
     this.hitArea = { x: -w / 2, y: -h / 2, width: w, height: h };
+
+    // Sprite art points right (0 rad); orient it along the travel direction.
+    this.character.setRotation(this.rot);
+    this.shadow.setRotation(this.rot);
   }
 
   loop(delta) {

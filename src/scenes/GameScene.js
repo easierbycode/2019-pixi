@@ -48,7 +48,7 @@ export class GameScene extends Phaser.Scene {
     this.playerBullets = [];
     this.enemyBullets = [];
 
-    this.explosionFrames = frameRange('explosion', 7);
+    this.explosionFrames = frameRange('explosion', 7, 2);
     this.itemFramesMap = {
       [SHOOT_MODES.BIG]: frameRange('powerupBig', 2),
       [SHOOT_MODES.THREE_WAY]: frameRange('powerup3way', 2),
@@ -494,7 +494,7 @@ export class GameScene extends Phaser.Scene {
   }
 
   triggerCAExplosions() {
-    const frames = frameRange('spExplosion', 8);
+    const frames = frameRange('spExplosion', 8, 2);
     if (!this.anims.exists('ca_spexp')) {
       this.anims.create({ key: 'ca_spexp', frames: frames.map((f) => ({ key: 'game_asset', frame: f })), frameRate: 16, repeat: 0 });
     }

@@ -1,6 +1,6 @@
 import Phaser from 'phaser';
 // GameTitle.js — "ROUND n / FIGHT", stage clear, time over and K.O. overlays.
-import { CENTER_X, CENTER_Y } from '../constants.js';
+import { CENTER_X, CENTER_Y, GAME_WIDTH, GAME_HEIGHT } from '../constants.js';
 import * as Sound from '../sound.js';
 
 export const GAMETITLE_EVT = { START: 'gametitle:start' };
@@ -19,8 +19,30 @@ export class GameTitle extends Phaser.GameObjects.Container {
   }
 
   gameStart(stageId) {
+    // Final stage opens on a held black screen with the "another fighter" callout
+    // before the ROUND/FIGHT sequence (matches the original timeline; GameScene
+    // likewise delays the stage-4 BGM ~3s to line up with this hold).
+    if (stageId === 4) {
+      const black = this.scene.add.rectangle(0, 0, GAME_WIDTH, GAME_HEIGHT, 0x000000).setOrigin(0, 0);
+      this.add(black);
+      Sound.play('voice_another_fighter');
+      this.scene.time.delayedCall(3000, () => {
+        this.scene.tweens.add({
+          targets: black, alpha: 0, duration: 300,
+          onComplete: () => { black.destroy(); this.roundSequence(stageId); },
+        });
+      });
+      return;
+    }
+    this.roundSequence(stageId);
+  }
+
+  roundSequence(stageId) {
     const title = this.show('stageTitle.gif', CENTER_Y - 20);
-    const num = this.show(`stageNum${stageId}.gif`, CENTER_Y + 10);
+    // Number art is 1-indexed (stageNum1..4) while stageId is 0-based; stage 4
+    // reuses "4". Without the offset, stage 0 asks for the nonexistent
+    // stageNum0.gif and Phaser falls back to the atlas's first frame (twitterBtn0).
+    const num = this.show(`stageNum${Math.min(stageId, 3) + 1}.gif`, CENTER_Y + 10);
     Sound.play(`voice_round${Math.min(stageId, 3)}`);
     this.scene.time.delayedCall(1200, () => {
       title.destroy();
