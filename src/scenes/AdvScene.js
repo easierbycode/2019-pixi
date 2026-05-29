@@ -1,7 +1,10 @@
 import Phaser from 'phaser';
-// AdvScene.js — short story interlude before each stage. Tap / space to continue.
-import { SCENES, GAME_WIDTH, GAME_HEIGHT, CENTER_X, CENTER_Y } from '../constants.js';
+// AdvScene.js — story interlude before each stage. Faithful layout: background image
+// anchored top-left (256x220), foreground cover below it, and a dialogue box in the
+// lower half that types out the stage's scenario text. Tap / space advances.
+import { SCENES, GAME_WIDTH, GAME_HEIGHT, CENTER_Y } from '../constants.js';
 import { gameState } from '../state.js';
+import { SCENARIO_EN } from '../scenario.js';
 import * as Sound from '../sound.js';
 
 export class AdvScene extends Phaser.Scene {
@@ -10,27 +13,90 @@ export class AdvScene extends Phaser.Scene {
   create() {
     this.add.rectangle(0, 0, GAME_WIDTH, GAME_HEIGHT, 0x000000).setOrigin(0, 0);
     Sound.bgmPlay('adventure_bgm');
-    Sound.play('g_adbenture_voice0');
 
-    this.panels = gameState.stageId === 0
-      ? ['advBg0.gif', 'advBg1.gif', 'advBg2.gif', 'advBg3.gif']
-      : [`advBg${Math.min(gameState.stageId, 3)}.gif`];
-    this.index = 0;
-    this.panel = this.add.image(CENTER_X, CENTER_Y, 'game_ui', this.panels[0]).setOrigin(0.5);
-    this.hint = this.add.image(GAME_WIDTH - 6, GAME_HEIGHT - 6, 'game_ui', 'advBgDone.gif').setOrigin(1, 1);
+    const key = `stage${gameState.stageId}`;
+    this.parts = (SCENARIO_EN[key] || SCENARIO_EN.stage0).part;
+    this.partNum = 0;
 
-    this.input.on('pointerup', () => this.next());
-    this.input.keyboard.on('keydown-SPACE', () => this.next());
+    // Background image (top-left origin, 256x220)
+    this.bgSprite = this.add.image(0, 0, 'game_ui', 'advBg0.gif').setOrigin(0, 0);
+
+    // Foreground overlay tiled below the background
+    this.cover = this.add.tileSprite(0, 220, GAME_WIDTH, GAME_HEIGHT - 220, 'game_asset', 'stagebgOver.gif').setOrigin(0, 0);
+
+    // Name box ("G")
+    this.nameBox = this.add.graphics();
+    this.nameBox.lineStyle(2, 0xffffff, 1).fillStyle(0x000000, 1);
+    this.nameBox.fillRoundedRect(16, CENTER_Y - 5, 80, 24, 6).strokeRoundedRect(16, CENTER_Y - 5, 80, 24, 6);
+    this.add.text(34, CENTER_Y + 2, 'G', { fontFamily: 'sans-serif', fontSize: '14px', color: '#ffffff' }).setOrigin(0, 0);
+
+    // Dialogue box
+    this.txtBox = this.add.graphics();
+    this.txtBox.lineStyle(2, 0xffffff, 1).fillStyle(0x000000, 1);
+    this.txtBox.fillRoundedRect(8, CENTER_Y + 7, GAME_WIDTH - 16, 180, 6).strokeRoundedRect(8, CENTER_Y + 7, GAME_WIDTH - 16, 180, 6);
+    this.txt = this.add.text(18, CENTER_Y + 30, '', {
+      fontFamily: 'sans-serif', fontSize: '15px', color: '#ffffff', lineSpacing: 4,
+      wordWrap: { width: GAME_WIDTH - 36 },
+    }).setOrigin(0, 0);
+
+    // Blinking "continue" indicator at the bottom of the dialogue box.
+    this.hint = this.add.text(GAME_WIDTH - 26, CENTER_Y + 165, '▼', {
+      fontFamily: 'sans-serif', fontSize: '14px', color: '#ffffff',
+    }).setOrigin(0.5).setVisible(false);
+    this.tweens.add({ targets: this.hint, alpha: 0.2, duration: 450, yoyo: true, repeat: -1 });
+
+    this.input.on('pointerup', () => this.advance());
+    this.input.keyboard.on('keydown-SPACE', () => this.advance());
+
+    this.showPart();
   }
 
-  next() {
-    Sound.play('se_decision');
-    this.index++;
-    if (this.index >= this.panels.length) { this.finish(); return; }
-    this.panel.setTexture('game_ui', this.panels[this.index]);
+  showPart() {
+    const part = this.parts[this.partNum];
+    const bgFrame = `advBg${part.background}.gif`;
+    if (this.textures.get('game_ui').has(bgFrame)) this.bgSprite.setTexture('game_ui', bgFrame);
+    if (part.background === 'Done') Sound.play('g_adbenture_voice0');
+
+    this.full = part.text;
+    this.shown = 0;
+    this.txt.setText('');
+    this.complete = false;
+    this.hint.setVisible(false);
+
+    if (this.typer) this.typer.remove();
+    this.typer = this.time.addEvent({
+      delay: 33, loop: true,
+      callback: () => {
+        if (this.shown >= this.full.length) {
+          this.complete = true;
+          this.hint.setVisible(true);
+          this.typer.remove();
+          return;
+        }
+        this.shown++;
+        this.txt.setText(this.full.slice(0, this.shown));
+      },
+    });
+  }
+
+  advance() {
+    if (!this.complete) {
+      // First tap: reveal the whole line instantly.
+      this.shown = this.full.length;
+      this.txt.setText(this.full);
+      this.complete = true;
+      this.hint.setVisible(true);
+      if (this.typer) this.typer.remove();
+      return;
+    }
+    Sound.play('se_cursor_sub');
+    this.partNum++;
+    if (this.partNum >= this.parts.length) { this.finish(); return; }
+    this.showPart();
   }
 
   finish() {
+    Sound.play('se_correct');
     Sound.stopBgm('adventure_bgm');
     this.scene.start(SCENES.GAME);
   }

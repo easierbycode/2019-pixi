@@ -4,8 +4,8 @@
     {
       "name": "pixi-static",
       "runtimeExecutable": "python3",
-      "runtimeArgs": ["-m", "http.server", "8124"],
-      "port": 8124
+      "runtimeArgs": [".claude/serve_nocache.py", "8125"],
+      "port": 8125
     }
   ]
 }
