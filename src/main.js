@@ -8,7 +8,6 @@ import { TitleScene } from './scenes/TitleScene.js';
 import { AdvScene } from './scenes/AdvScene.js';
 import { GameScene } from './scenes/GameScene.js';
 import { ContinueScene } from './scenes/ContinueScene.js';
-import { GameoverScene } from './scenes/GameoverScene.js';
 import { ResultScene } from './scenes/ResultScene.js';
 import { CongraScene } from './scenes/CongraScene.js';
 import { EndingScene } from './scenes/EndingScene.js';
@@ -27,7 +26,7 @@ const config = {
   },
   scene: [
     BootScene, PreloadScene, TitleScene, AdvScene, GameScene,
-    ContinueScene, GameoverScene, ResultScene, CongraScene, EndingScene,
+    ContinueScene, ResultScene, CongraScene, EndingScene,
   ],
 };
 

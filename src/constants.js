@@ -26,7 +26,6 @@ export const SCENES = {
   ADV: 'AdvScene',
   GAME: 'GameScene',
   CONTINUE: 'ContinueScene',
-  GAMEOVER: 'GameoverScene',
   RESULT: 'ResultScene',
   CONGRA: 'CongraScene',
   ENDING: 'EndingScene',
