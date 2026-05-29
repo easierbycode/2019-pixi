@@ -20,6 +20,7 @@ export const CENTER_Y = GAME_HEIGHT / 2;
 export const FPS = 30;
 
 export const SCENES = {
+  BOOT: 'BootScene',
   PRELOAD: 'PreloadScene',
   TITLE: 'TitleScene',
   ADV: 'AdvScene',
@@ -53,10 +54,7 @@ export const ATLASES = {
 // Plain images — { key: path }
 export const IMAGES = {
   title_bg: 'assets/img/title_bg.jpg',
-  loading_bg: 'assets/img/loading/loading_bg.png',
-  loading0: 'assets/img/loading/loading0.gif',
-  loading1: 'assets/img/loading/loading1.gif',
-  loading2: 'assets/img/loading/loading2.gif',
+  // loading_bg / loading0-2 are loaded up-front by BootScene.
   stage_loop0: 'assets/img/stage/stage_loop0.png',
   stage_loop1: 'assets/img/stage/stage_loop1.png',
   stage_loop2: 'assets/img/stage/stage_loop2.png',

@@ -2,6 +2,7 @@
 import Phaser from 'phaser';
 import { GAME_WIDTH, GAME_HEIGHT } from './constants.js';
 import { initSound } from './sound.js';
+import { BootScene } from './scenes/BootScene.js';
 import { PreloadScene } from './scenes/PreloadScene.js';
 import { TitleScene } from './scenes/TitleScene.js';
 import { AdvScene } from './scenes/AdvScene.js';
@@ -25,7 +26,7 @@ const config = {
     autoCenter: Phaser.Scale.CENTER_BOTH,
   },
   scene: [
-    PreloadScene, TitleScene, AdvScene, GameScene,
+    BootScene, PreloadScene, TitleScene, AdvScene, GameScene,
     ContinueScene, GameoverScene, ResultScene, CongraScene, EndingScene,
   ],
 };
