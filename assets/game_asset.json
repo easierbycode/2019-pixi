@@ -1020,6 +1020,14 @@
 				"h": 128
 			}
 		},
+		"caExplosion00.gif": {"frame": {"x": 896, "y": 1152, "w": 128, "h": 128}, "rotated": false, "trimmed": false, "spriteSourceSize": {"x": 0, "y": 0, "w": 128, "h": 128}, "sourceSize": {"w": 128, "h": 128}},
+		"caExplosion01.gif": {"frame": {"x": 1024, "y": 1152, "w": 128, "h": 128}, "rotated": false, "trimmed": false, "spriteSourceSize": {"x": 0, "y": 0, "w": 128, "h": 128}, "sourceSize": {"w": 128, "h": 128}},
+		"caExplosion02.gif": {"frame": {"x": 1152, "y": 1152, "w": 128, "h": 128}, "rotated": false, "trimmed": false, "spriteSourceSize": {"x": 0, "y": 0, "w": 128, "h": 128}, "sourceSize": {"w": 128, "h": 128}},
+		"caExplosion03.gif": {"frame": {"x": 1280, "y": 1152, "w": 128, "h": 128}, "rotated": false, "trimmed": false, "spriteSourceSize": {"x": 0, "y": 0, "w": 128, "h": 128}, "sourceSize": {"w": 128, "h": 128}},
+		"caExplosion04.gif": {"frame": {"x": 1408, "y": 1152, "w": 128, "h": 128}, "rotated": false, "trimmed": false, "spriteSourceSize": {"x": 0, "y": 0, "w": 128, "h": 128}, "sourceSize": {"w": 128, "h": 128}},
+		"caExplosion05.gif": {"frame": {"x": 1536, "y": 1152, "w": 128, "h": 128}, "rotated": false, "trimmed": false, "spriteSourceSize": {"x": 0, "y": 0, "w": 128, "h": 128}, "sourceSize": {"w": 128, "h": 128}},
+		"caExplosion06.gif": {"frame": {"x": 1664, "y": 1152, "w": 128, "h": 128}, "rotated": false, "trimmed": false, "spriteSourceSize": {"x": 0, "y": 0, "w": 128, "h": 128}, "sourceSize": {"w": 128, "h": 128}},
+		"caExplosion07.gif": {"frame": {"x": 1792, "y": 1152, "w": 128, "h": 128}, "rotated": false, "trimmed": false, "spriteSourceSize": {"x": 0, "y": 0, "w": 128, "h": 128}, "sourceSize": {"w": 128, "h": 128}},
 		"hit0.gif": {
 			"frame": {
 				"x": 0,
