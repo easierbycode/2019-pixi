@@ -141,6 +141,32 @@
 		document.querySelector('#howtoModal .howtoModalCover').addEventListener('click', window.howtoModalClose);
 	</script>
 
-	<script type="module" src="src/main.js"></script>
+	<!-- Boot the Phaser port by default, or the original PixiJS build with ?pixi=1. -->
+	<script>
+		(function () {
+			if (new URLSearchParams(location.search).get('pixi') === '1') {
+				// Original build: load its globals (PIXI, pixi-sound, jQuery, GSAP) then
+				// the bundle, which auto-boots on window load. Classic (blocking) scripts
+				// keep load order and finish before the load event.
+				[
+					'js/pixi.min.js',
+					'js/pixi-sound.min.js',
+					'js/jquery.2.1.3.js',
+					'js/TweenMax.min.js',
+					'app_formatted.js'
+				].forEach(function (src) {
+					document.write('<script src="' + src + '"><\/script>');
+				});
+				// Asset base the original reads at load (empty = relative to this page).
+				// Written after the bundle so it isn't in the DOM when the bundle evaluates
+				// its own `'baseUrl' in window` check (an id makes it a named global).
+				document.write('<div id="baseUrl"></div>');
+			} else {
+				// Phaser port: dynamic import() runs the ES module and honours the
+				// import map above (document.write of a module script would not execute).
+				import('./src/main.js');
+			}
+		})();
+	</script>
 </body>
 </html>
