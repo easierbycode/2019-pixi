@@ -112,8 +112,9 @@ export class GameScene extends Phaser.Scene {
       else Sound.bgmPlay(this.stageBgmName);
     }
 
-    // Input
+    // Input — keyboard (arrows move, Space fires CA) mirrors the pointer drag.
     this.cursors = this.input.keyboard.createCursorKeys();
+    this.input.keyboard.on('keyup-SPACE', () => this.hud.requestCaFire());
     this.input.on('pointerdown', (p) => { this.dragging = true; this.player.unitX = p.x; });
     this.input.on('pointermove', (p) => { if (this.dragging) this.player.unitX = p.x; });
     this.input.on('pointerup', () => { this.dragging = false; });
@@ -136,7 +137,11 @@ export class GameScene extends Phaser.Scene {
   update(time, delta) {
     const d = delta / (1000 / 60);
     gameState.frame = (gameState.frame + 1) % 60;
-    if (this.theWorldFlg) { this.player && this.player.loop(d); return; }
+    if (this.player) {
+      this.player.keyLeft = this.cursors.left.isDown;
+      this.player.keyRight = this.cursors.right.isDown;
+    }
+    if (this.theWorldFlg) return; // "the world": freeze the player (and all gameplay) until it clears
 
     const scroll = this.stageScrollSpeed * d;
     this.stageBg.loop(scroll);
@@ -473,7 +478,8 @@ export class GameScene extends Phaser.Scene {
     this.theWorldFlg = true;
     this.hud.caFireFlg = true;
     if (this.boss) this.boss.onTheWorld(true);
-    this.player.shootStop();
+    // Keep the player auto-firing: "the world" freezes the loop (see update), and it
+    // resumes shooting when theWorldFlg clears — matching the original (Player.caFire is a no-op).
     this.clearBullets();
     this.cutin.start();
     Sound.play('g_ca_voice');

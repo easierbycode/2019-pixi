@@ -49,16 +49,21 @@ export class HUD extends Phaser.GameObjects.Container {
     // CA button group (glow ring concentric with the 67x67 button)
     this.caBtn = scene.add.container(GAME_WIDTH - 70, GAME_HEIGHT / 2 + 15);
     this.caGlow = scene.add.image(33, 33, 'game_ui', 'hudCabtnBg0.gif').setOrigin(0.5).setAlpha(0);
-    this.caFace = scene.add.image(0, 0, 'game_ui', 'hudCabtn0per.gif').setOrigin(0, 0);
+    this.caFace = scene.add.image(0, 0, 'game_ui', 'hudCabtn100per.gif').setOrigin(0, 0);
     this.caBtn.add([this.caGlow, this.caFace]);
     this.add(this.caBtn);
     this.caFace.setInteractive({ useHandCursor: true });
-    this.caFace.on('pointerup', () => {
-      if (this.cagageFlg && this.caActive) this.emit(HUD_EVT.CA_FIRE);
-    });
+    this.caFace.on('pointerup', () => this.requestCaFire());
     this.caActive = false;
 
     scene.add.existing(this);
+  }
+
+  // The single gate shared by the pointer and keyboard (Space) paths: fire only
+  // when the gauge is full AND the button is active (mirrors the original, which
+  // only honoured the key while the CA button was active).
+  requestCaFire() {
+    if (this.cagageFlg && this.caActive) this.emit(HUD_EVT.CA_FIRE);
   }
 
   get scoreCount() { return this._score; }
@@ -88,7 +93,7 @@ export class HUD extends Phaser.GameObjects.Container {
     const ready = this._cagage >= MAX_CAGAGE;
     if (ready && !this.cagageFlg) Sound.play('g_powerup_voice');
     this.cagageFlg = ready;
-    this.caFace.setTexture('game_ui', ready ? 'hudCabtn100per.gif' : 'hudCabtn0per.gif');
+    this.caFace.setTexture('game_ui', ready ? 'hudCabtn0per.gif' : 'hudCabtn100per.gif');
     if (ready && this.caActive) this.pulseGlow(true);
     else this.pulseGlow(false);
   }
