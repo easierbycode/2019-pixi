@@ -53,12 +53,17 @@ export class HUD extends Phaser.GameObjects.Container {
     this.caBtn.add([this.caGlow, this.caFace]);
     this.add(this.caBtn);
     this.caFace.setInteractive({ useHandCursor: true });
-    this.caFace.on('pointerup', () => {
-      if (this.cagageFlg && this.caActive) this.emit(HUD_EVT.CA_FIRE);
-    });
+    this.caFace.on('pointerup', () => this.requestCaFire());
     this.caActive = false;
 
     scene.add.existing(this);
+  }
+
+  // The single gate shared by the pointer and keyboard (Space) paths: fire only
+  // when the gauge is full AND the button is active (mirrors the original, which
+  // only honoured the key while the CA button was active).
+  requestCaFire() {
+    if (this.cagageFlg && this.caActive) this.emit(HUD_EVT.CA_FIRE);
   }
 
   get scoreCount() { return this._score; }

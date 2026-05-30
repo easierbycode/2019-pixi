@@ -114,7 +114,7 @@ export class GameScene extends Phaser.Scene {
 
     // Input — keyboard (arrows move, Space fires CA) mirrors the pointer drag.
     this.cursors = this.input.keyboard.createCursorKeys();
-    this.input.keyboard.on('keyup-SPACE', () => this.caFire());
+    this.input.keyboard.on('keyup-SPACE', () => this.hud.requestCaFire());
     this.input.on('pointerdown', (p) => { this.dragging = true; this.player.unitX = p.x; });
     this.input.on('pointermove', (p) => { if (this.dragging) this.player.unitX = p.x; });
     this.input.on('pointerup', () => { this.dragging = false; });
