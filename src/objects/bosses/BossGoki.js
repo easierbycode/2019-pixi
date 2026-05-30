@@ -11,10 +11,10 @@ export class BossGoki extends Boss {
     this.toggle = (this.toggle + 1) % 2;
     if (this.toggle === 0) {
       Sound.play('boss_goki_voice_tama0');
-      this.fire(this.data.bulletDataA, 'spread', 'shootA');
+      this.fire(this.bossData.bulletDataA, 'spread', 'shootA');
     } else {
       Sound.play('boss_goki_voice_tama1');
-      this.fire(this.data.bulletDataB, 'aimed', 'shootB');
+      this.fire(this.bossData.bulletDataB, 'aimed', 'shootB');
     }
   }
 

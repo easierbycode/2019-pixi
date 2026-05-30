@@ -9,10 +9,10 @@ export class BossSagat extends Boss {
     this.toggle = (this.toggle + 1) % 3;
     if (this.toggle === 0) {
       Sound.play('boss_sagat_voice_tama1');
-      this.fire(this.data.bulletDataB, 'aimed', 'shoot');
+      this.fire(this.bossData.bulletDataB, 'aimed', 'shoot');
     } else {
       Sound.play('boss_sagat_voice_tama0');
-      this.fire(this.data.bulletDataA, 'spread', 'shoot');
+      this.fire(this.bossData.bulletDataA, 'spread', 'shoot');
     }
   }
 

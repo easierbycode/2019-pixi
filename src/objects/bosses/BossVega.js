@@ -19,10 +19,10 @@ export class BossVega extends Boss {
     this.toggle = (this.toggle + 1) % 2;
     if (this.toggle === 0) {
       Sound.play('boss_vega_voice_tama');
-      this.fire(this.data.bulletDataA, 'ring', 'shoot');
+      this.fire(this.bossData.bulletDataA, 'ring', 'shoot');
     } else {
       Sound.play('boss_vega_voice_shoot');
-      this.fire(this.data.bulletDataB, 'aimed', 'shoot');
+      this.fire(this.bossData.bulletDataB, 'aimed', 'shoot');
     }
   }
 
