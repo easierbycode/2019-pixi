@@ -7,7 +7,7 @@ export class BossBarlog extends Boss {
 
   attack() {
     Sound.play('boss_barlog_voice_tama');
-    this.fire(this.data.bulletData, 'aimed', 'shoot');
+    this.fire(this.bossData.bulletData, 'aimed', 'shoot');
   }
 
   onDead() { Sound.play('boss_barlog_voice_ko'); }

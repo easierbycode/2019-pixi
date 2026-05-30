@@ -19,7 +19,7 @@ export class Boss extends BaseUnit {
     this.hp = data.hp;
     this.cagage = data.spgage ?? 0;
     this.bulletData = data.bulletDataA || data.bulletData || null;
-    this.data = data;
+    this.bossData = data;
 
     this.animKeys = {};
     for (const key in data.anim) {
@@ -152,8 +152,8 @@ export class Boss extends BaseUnit {
 
   spawnDeathExplosion(isLast) {
     if (!this.explosion) { if (isLast) this.finishDead(); return; }
-    const ex = this.scene.add.sprite(0, 0, 'game_asset', this.data.explosion[0]).setOrigin(0.5);
-    const exAnim = ensureAnim(this.scene, 'game_asset', this.data.explosion, { fps: speedToFps(0.15), repeat: 0 });
+    const ex = this.scene.add.sprite(0, 0, 'game_asset', this.bossData.explosion[0]).setOrigin(0.5);
+    const exAnim = ensureAnim(this.scene, 'game_asset', this.bossData.explosion, { fps: speedToFps(0.15), repeat: 0 });
     ex.x = (Math.random() - 0.5) * this.hitArea.width;
     ex.y = (Math.random() - 0.5) * this.hitArea.height;
     this.add(ex);
