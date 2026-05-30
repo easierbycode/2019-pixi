@@ -192,24 +192,26 @@ export class GameScene extends Phaser.Scene {
   checkCollisions() {
     for (let i = this.playerBullets.length - 1; i >= 0; i--) {
       const b = this.playerBullets[i];
-      if (b.deadFlg) continue;
+      // A hit can kill the boss → handleBossRemoved() → clearBullets() empties this
+      // array mid-loop, leaving the cached-length indices undefined.
+      if (!b || b.deadFlg) continue;
       for (let j = this.enemies.length - 1; j >= 0; j--) {
         const e = this.enemies[j];
-        if (e.deadFlg) continue;
+        if (!e || e.deadFlg) continue;
         if (hitTest(b, e)) { this.playerBulletHitEnemy(b, e, i, j); break; }
       }
     }
     if (!this.player.deadFlg && !this.player.barrierFlg) {
       for (let i = this.enemyBullets.length - 1; i >= 0; i--) {
         const b = this.enemyBullets[i];
-        if (b.deadFlg) continue;
+        if (!b || b.deadFlg) continue;
         if (hitTest(b, this.player)) { this.playerDamage(b.damage); b.onDamage(1); }
       }
     }
     if (!this.player.deadFlg) {
       for (let i = this.enemies.length - 1; i >= 0; i--) {
         const e = this.enemies[i];
-        if (e.deadFlg) continue;
+        if (!e || e.deadFlg) continue;
         if (this.player.barrierFlg) {
           if (this.player.barrier && hitTest(e, { x: this.player.x, y: this.player.y, hitArea: { x: -16, y: -50, width: 32, height: 40 } })) {
             this.player.barrierHitEffect();
@@ -224,6 +226,7 @@ export class GameScene extends Phaser.Scene {
     if (!this.player.deadFlg) {
       for (let i = this.items.length - 1; i >= 0; i--) {
         const it = this.items[i];
+        if (!it) continue;
         if (hitTest(it, this.player)) this.handleItemPickup(it, i);
       }
     }
