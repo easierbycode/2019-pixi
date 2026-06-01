@@ -19,6 +19,12 @@ export const CENTER_X = GAME_WIDTH / 2;
 export const CENTER_Y = GAME_HEIGHT / 2;
 export const FPS = 30;
 
+// Enemies/bosses descend from the top behind the HUD and are only hittable once their top
+// edge clears it — matching the original (player shots gate at y >= 40; the CA screen-nuke at
+// y >= 20). Without this they can be hit/killed while still behind the HUD, before being visible.
+export const HIT_GATE_TOP_Y = 40;
+export const CA_GATE_TOP_Y = 20;
+
 export const SCENES = {
   BOOT: 'BootScene',
   PRELOAD: 'PreloadScene',

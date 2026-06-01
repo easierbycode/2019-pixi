@@ -3,6 +3,7 @@ import Phaser from 'phaser';
 import {
   SCENES, GAME_WIDTH, GAME_HEIGHT, CENTER_X,
   SHOOT_MODES, SHOOT_SPEEDS, ITEM_TYPES, BGM_INFO,
+  HIT_GATE_TOP_Y, CA_GATE_TOP_Y,
 } from '../constants.js';
 import { gameState, saveHighScore } from '../state.js';
 import { frameRange } from '../anims.js';
@@ -196,6 +197,8 @@ export class GameScene extends Phaser.Scene {
       for (let j = this.enemies.length - 1; j >= 0; j--) {
         const e = this.enemies[j];
         if (e.deadFlg) continue;
+        // Don't let shots connect while the enemy's top is still behind the top HUD (matches original).
+        if (e.y + e.hitArea.y < HIT_GATE_TOP_Y) continue;
         if (hitTest(b, e)) { this.playerBulletHitEnemy(b, e, i, j); break; }
       }
     }
@@ -518,7 +521,8 @@ export class GameScene extends Phaser.Scene {
 
   applyCADamage() {
     [...this.enemies].forEach((e, i) => {
-      if (e && !e.deadFlg) this.time.delayedCall(i * 5, () => {
+      // Skip enemies still behind the top HUD, like the original (CA gates a touch higher than shots).
+      if (e && !e.deadFlg && e.y + e.hitArea.y >= CA_GATE_TOP_Y) this.time.delayedCall(i * 5, () => {
         if (e && !e.deadFlg) { e.onDamage(gameState.caDamage); if (e.hp <= 0) this.handleEnemyRemoved(e); }
       });
     });
