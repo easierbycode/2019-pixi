@@ -4,6 +4,14 @@ import { SHOOT_MODES } from '../constants.js';
 import { gameState } from '../state.js';
 import * as Sound from '../sound.js';
 
+// Bullet art is normally drawn pointing RIGHT (0 rad), so rotating by the travel
+// angle aims the nose along its path. A few sprites are drawn facing another way;
+// record the angle their art already points at rest so we don't over-rotate them.
+// `normalProjectile` (soldierA's shot) is drawn already pointing DOWN, so the generic
+// "points right" assumption spun it an extra 90° and left it facing left. Keyed by
+// frame name minus its trailing index/extension ("normalProjectile0.gif" -> "normalProjectile").
+const ART_REST_ANGLE = { normalProjectile: Math.PI / 2 }; // drawn pointing down
+
 export class Bullet extends BaseUnit {
   constructor(scene, data) {
     super(scene, data.atlasKey || 'game_asset', data.texture, {
@@ -31,9 +39,14 @@ export class Bullet extends BaseUnit {
     const w = this.character.width, h = this.character.height;
     this.hitArea = { x: -w / 2, y: -h / 2, width: w, height: h };
 
-    // Sprite art points right (0 rad); orient it along the travel direction.
-    this.character.setRotation(this.rot);
-    this.shadow.setRotation(this.rot);
+    // Orient the sprite along its travel direction. Art points right (0 rad) by
+    // default; sprites in ART_REST_ANGLE are drawn facing another way, so subtract
+    // the angle they already point so the nose still ends up along `this.rot`.
+    const frame0 = (Array.isArray(data.texture) ? data.texture[0] : data.texture) || '';
+    const artBase = String(frame0).replace(/\d+\.\w+$/, '');
+    const artRest = ART_REST_ANGLE[artBase] ?? 0;
+    this.character.setRotation(this.rot - artRest);
+    this.shadow.setRotation(this.rot - artRest);
   }
 
   loop(delta) {
