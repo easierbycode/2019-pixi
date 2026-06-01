@@ -49,11 +49,14 @@ export class Enemy extends BaseUnit {
       this.shoot();
       this.bulletFrameCnt = 0;
     }
-    this.y += (this.speed + scroll) * delta;
+    // Enemies fall at their own speed; the stage scroll is purely a background visual
+    // (matches the original). Adding `scroll` here made them descend ~1.9x too fast, so
+    // they reached the bottom before their fire interval elapsed and barely shot.
+    this.y += this.speed * delta;
 
     if (this.name === 'soliderA') {
       if (this.y >= GAME_HEIGHT / 1.5 && gameState.playerRef) {
-        this.x += 0.05 * (gameState.playerRef.x - this.x) * delta;
+        this.x += 0.005 * (gameState.playerRef.x - this.x) * delta;
       }
     } else if (this.name === 'soliderB') {
       if (this.y <= 10) {
