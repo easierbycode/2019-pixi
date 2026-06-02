@@ -203,8 +203,8 @@ export class GameScene extends Phaser.Scene {
       }
     }
     // Player bullets shoot down enemy bullets — in the original, enemy bullets share the enemy
-    // hit-test list, so the same player-shot collision (damage both, award the bullet's score on
-    // kill) applies. Same top-HUD gate as enemies.
+    // hit-test list. Reuse the same mutual-damage handling and the same top-HUD gate. Enemy bullets
+    // have no EVT.DEAD score listener (unlike enemies/boss), so score the shoot-down explicitly here.
     for (let i = this.playerBullets.length - 1; i >= 0; i--) {
       const b = this.playerBullets[i];
       if (b.deadFlg) continue;
@@ -212,7 +212,11 @@ export class GameScene extends Phaser.Scene {
         const eb = this.enemyBullets[j];
         if (eb.deadFlg) continue;
         if (eb.y + eb.hitArea.y < HIT_GATE_TOP_Y) continue;
-        if (hitTest(b, eb)) { this.playerBulletHitEnemy(b, eb, i, j); break; }
+        if (hitTest(b, eb)) {
+          this.playerBulletHitEnemy(b, eb, i, j);
+          if (eb.deadFlg) this.handleEnemyRemoved(eb);
+          break;
+        }
       }
     }
     if (!this.player.deadFlg && !this.player.barrierFlg) {
@@ -249,7 +253,10 @@ export class GameScene extends Phaser.Scene {
     const before = enemy.hp;
     enemy.onDamage(bullet.damage);
     bullet.onDamage(1, before > 0 ? 'normal' : 'infinity');
-    if (enemy.hp <= 0 && before > 0) this.handleEnemyRemoved(enemy);
+    // Don't award score here: an enemy's death already reaches handleEnemyRemoved via its
+    // EVT.DEAD listener (and the boss's via handleBossRemoved). Calling it here too double-counted
+    // score/combo on every shot kill. Enemy bullets, which have no DEAD listener, are scored by
+    // the enemy-bullet collision loop above.
   }
 
   handleItemPickup(item, index) {
@@ -536,7 +543,9 @@ export class GameScene extends Phaser.Scene {
     [...this.enemies].forEach((e, i) => {
       // Skip enemies still behind the top HUD, like the original (CA gates a touch higher than shots).
       if (e && !e.deadFlg && e.y + e.hitArea.y >= CA_GATE_TOP_Y) this.time.delayedCall(i * 5, () => {
-        if (e && !e.deadFlg) { e.onDamage(gameState.caDamage); if (e.hp <= 0) this.handleEnemyRemoved(e); }
+        // Score/combo comes from the death handler via EVT.DEAD (enemies -> handleEnemyRemoved,
+        // boss -> handleBossRemoved); don't also award it here or CA kills double-count.
+        if (e && !e.deadFlg) { e.onDamage(gameState.caDamage); }
       });
     });
   }
