@@ -4,8 +4,25 @@
     {
       "name": "pixi-static",
       "runtimeExecutable": "python3",
-      "runtimeArgs": [".claude/serve_nocache.py", "8125"],
+      "runtimeArgs": [
+        ".claude/serve_nocache.py",
+        "8125"
+      ],
       "port": 8125
+    },
+    {
+      "name": "turbo",
+      "runtimeExecutable": "python3",
+      "runtimeArgs": [
+        "-m",
+        "http.server",
+        "8124",
+        "--directory",
+        "/Users/danieljohnson/CODE/2019-pixi-turbo",
+        "--bind",
+        "127.0.0.1"
+      ],
+      "port": 8124
     }
   ]
 }
