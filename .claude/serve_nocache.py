@@ -1,5 +1,6 @@
 #!/usr/bin/env python3
 """Static file server that disables caching, so edited ES modules always reload."""
+import os
 import sys
 from http.server import HTTPServer, SimpleHTTPRequestHandler
 
@@ -14,4 +15,6 @@ class NoCacheHandler(SimpleHTTPRequestHandler):
 
 if __name__ == "__main__":
     port = int(sys.argv[1]) if len(sys.argv) > 1 else 8125
+    if len(sys.argv) > 2:
+        os.chdir(sys.argv[2])
     HTTPServer(("", port), NoCacheHandler).serve_forever()
