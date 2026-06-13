@@ -6,7 +6,7 @@ import {
   HIT_GATE_TOP_Y, CA_GATE_TOP_Y,
 } from '../constants.js';
 import { gameState, saveHighScore } from '../state.js';
-import { frameRange } from '../anims.js';
+import { frameRange, ensureAnim, speedToFps } from '../anims.js';
 import { hitTest } from '../hit.js';
 import * as Sound from '../sound.js';
 import { Player } from '../objects/Player.js';
@@ -289,7 +289,7 @@ export class GameScene extends Phaser.Scene {
     if (this.theWorldFlg) return;
     this.theWorldFlg = true;
     this.hud.caBtnDeactive();
-    this.boss.shungokusatsu();
+    this.boss.shungokusatsu(this.player, true);
     this.player.setAlpha(0);
     this.time.delayedCall(1800, () => this.player && this.player.setAlpha(1));
     this.time.delayedCall(1900, () => this.stageBg.akebonoGokifinish());
@@ -406,11 +406,10 @@ export class GameScene extends Phaser.Scene {
     });
   }
 
-  spawnEnemyBullet(data, x, y, rot, opts = {}) {
-    const bullet = new Bullet(this, { ...data, atlasKey: 'game_asset', rotation: rot });
+  spawnEnemyBullet(data, x, y) {
+    const bullet = new Bullet(this, { ...data, atlasKey: 'game_asset' });
     bullet.setDepth(DEPTH.BULLET);
     bullet.setPosition(x, y);
-    if (opts.rotX !== undefined) { bullet.rotX = opts.rotX; bullet.rotY = opts.rotY; }
     bullet.once(EVT.DEAD_COMPLETE, () => {
       const idx = this.enemyBullets.indexOf(bullet);
       if (idx > -1) this.removeEnemyBullet(bullet, idx);
@@ -419,30 +418,95 @@ export class GameScene extends Phaser.Scene {
     return bullet;
   }
 
+  // Projectile spawner ported from the original GameScene.projectileAdd:
+  // the pattern is keyed by the recipe's name, everything else falls straight
+  // down. Enemy/boss projectile sprites are never rotated — only Fang's beams
+  // get an explicit rotation.
   handleEnemyShoot(ctx) {
     const data = ctx.bulletData;
     if (!data || !data.texture) return;
     data.explosion = data.explosion || this.explosionFrames;
-    const ox = ctx.x;
-    const oy = ctx.y + (ctx.hitArea ? ctx.hitArea.height / 2 : 0);
-    const aimAt = () => {
-      const p = gameState.playerRef;
-      return p ? Math.atan2(p.y - oy, p.x - ox) : Math.PI / 2;
-    };
-    const pattern = ctx.pattern || 'down';
-    if (pattern === 'aimed') {
-      this.spawnEnemyBullet(data, ox, oy, aimAt());
-    } else if (pattern === 'spread') {
-      const base = aimAt();
-      [-0.3, 0, 0.3].forEach((off) => this.spawnEnemyBullet(data, ox, oy, base + off));
-    } else if (pattern === 'ring') {
-      const n = 24;
-      for (let i = 0; i < n; i++) {
-        const a = (i / n) * Math.PI * 2;
-        this.spawnEnemyBullet(data, ox, oy, a, { rotX: Math.cos(a), rotY: Math.sin(a) });
+    const halfW = ctx.character.width / 2;
+    const halfH = ctx.character.height / 2;
+
+    switch (data.name) {
+      case 'beam': { // two angled beams; the angle cycles 105°/90°/75° per volley
+        for (let i = 0; i < 2; i++) {
+          const b = this.spawnEnemyBullet(data, ctx.x - halfW + (i === 0 ? 121 : 141), ctx.y - halfH + 50);
+          const w = b.character.width, h = b.character.height;
+          let degree;
+          if (data.cnt === 0) { degree = 105; b.hitArea = { x: -2.7 * h, y: w / 2 - 10, width: h, height: w / 2 }; }
+          else if (data.cnt === 1) { degree = 90; b.hitArea = { x: -h, y: w / 2, width: h, height: w / 2 }; }
+          else { degree = 75; b.hitArea = { x: 0.7 * h, y: w / 2 - 5, width: h, height: w / 2 }; }
+          const rad = Phaser.Math.DegToRad(degree);
+          // The original rotates the beam art about its top-left corner.
+          b.character.setOrigin(0, 0).setRotation(rad);
+          b.rotX = Math.cos(rad);
+          b.rotY = Math.sin(rad);
+        }
+        data.cnt = data.cnt >= 2 ? 0 : data.cnt + 1;
+        break;
       }
-    } else {
-      this.spawnEnemyBullet(data, ox, oy, Math.PI / 2);
+      case 'smoke': { // poison cloud drifting down at a random 60–120° angle
+        const rad = Phaser.Math.DegToRad(60 * Math.random() + 60);
+        const b = this.spawnEnemyBullet(data, ctx.x - 50, ctx.y - halfH + 45);
+        const w = b.character.width, h = b.character.height;
+        b.hitArea = { x: -w / 2 + 20, y: -h / 2 + 20, width: w - 40, height: h - 40 };
+        b.rotX = Math.cos(rad);
+        b.rotY = Math.sin(rad);
+        // Original cloud anim plays through once, then loops its tail from frame 6.
+        if (data.texture.length > 6) {
+          const intro = ensureAnim(this, 'game_asset', data.texture, { fps: speedToFps(0.1), repeat: 0 });
+          const tail = ensureAnim(this, 'game_asset', data.texture.slice(6), { fps: speedToFps(0.1) });
+          b.character.play(intro);
+          b.character.once(Phaser.Animations.Events.ANIMATION_COMPLETE, () => {
+            if (b.character) b.character.play(tail);
+          });
+        }
+        break;
+      }
+      case 'meka': { // 32 drones scale in, scatter over the boss, then home down
+        // The original reused the owner's local hit-rect values as absolute
+        // screen coordinates here; inset/spans reproduce that.
+        const inset = ctx.hitArea.x + halfW;
+        const top = ctx.hitArea.y + halfH;
+        for (let i = 0; i < 32; i++) {
+          const b = this.spawnEnemyBullet(
+            { ...data, start: 10 * i },
+            inset + ctx.hitArea.width / 2,
+            top + ctx.hitArea.height,
+          );
+          b.setScale(0);
+          this.tweens.add({
+            targets: b,
+            x: Math.random() * (GAME_WIDTH - 2 * inset),
+            y: Math.random() * ctx.hitArea.height + top,
+            scale: 1,
+            duration: 300,
+          });
+        }
+        break;
+      }
+      case 'psychoField': { // 72-shot ring expanding from the boss centre
+        for (let i = 0; i < 72; i++) {
+          const a = (i / 72) * Math.PI * 2;
+          const rx = Math.cos(a), ry = Math.sin(a);
+          const b = this.spawnEnemyBullet(data, 0, 0);
+          b.setPosition(
+            50 * rx + (ctx.x - halfW) + ctx.hitArea.width / 2 + b.character.width / 2,
+            50 * ry + (ctx.y - halfH) + ctx.hitArea.height / 2,
+          );
+          b.rotX = rx;
+          b.rotY = ry;
+        }
+        break;
+      }
+      default: { // straight down from the unit's mouth — never aimed (matches original)
+        const b = this.spawnEnemyBullet(data, ctx.x, 0);
+        b.y = (ctx.y - halfH) + ctx.hitArea.height / 2 + b.character.height / 2;
+        b.rotX = 0;
+        b.rotY = 1;
+      }
     }
   }
 

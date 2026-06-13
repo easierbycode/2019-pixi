@@ -1,7 +1,12 @@
 import Phaser from 'phaser';
 // Boss.js — base class for the six stage bosses.
+// Movement/attack patterns are ports of the original GSAP timelines
+// (2019-es7 src/bosses/*.js): ~1s after the boss settles it starts a pattern
+// timeline that re-chains itself forever, re-rolling a random pattern each
+// cycle. The original positions units by their top-left corner; this port uses
+// centre-origin containers — cxl()/cyt() convert original corner coordinates.
 import { BaseUnit, EVT } from '../BaseUnit.js';
-import { GAME_HEIGHT, CENTER_X } from '../../constants.js';
+import { GAME_WIDTH, GAME_HEIGHT, CENTER_X } from '../../constants.js';
 import { gameState } from '../../state.js';
 import { ensureAnim, speedToFps, frameRange } from '../../anims.js';
 import * as Sound from '../../sound.js';
@@ -30,7 +35,7 @@ export class Boss extends BaseUnit {
     const dangerFrames = frameRange('boss_dengerous', 3);
     if (scene.textures.get('game_asset').has(dangerFrames[0])) {
       const dKey = ensureAnim(scene, 'game_asset', dangerFrames, { fps: speedToFps(0.2) });
-      this.dengerousBalloon = scene.add.sprite(0, 0, 'game_asset', dangerFrames[0]).setOrigin(0.5, 1);
+      this.dengerousBalloon = scene.add.sprite(0, 0, 'game_asset', dangerFrames[0]).setOrigin(0, 1);
       this.dengerousBalloon.play(dKey);
       this.dengerousBalloon.setScale(0).setVisible(false);
       this.add(this.dengerousBalloon);
@@ -38,22 +43,31 @@ export class Boss extends BaseUnit {
 
     this.shadowReverse = data.shadowReverse !== undefined ? data.shadowReverse : true;
     this.shadowOffsetY = data.shadowOffsetY || 0;
-    this.shootOn = false;
+    this.shootOn = true; // cadence arms as soon as the boss settles (as in the original)
     this.bulletFrameCnt = 0;
     this.moveFlg = false;
     this.dengerousFlg = false;
     this.explotionCnt = 0;
     this.frozen = false;
     this.appearDuration = 6.0;
+    this.enterSpeed = 1;
+    // Original: boss settles with its top edge at GAME_HEIGHT/4.
+    this.restY = GAME_HEIGHT / 4 + this.character.height / 2;
+    this.addVoice = null; // per-boss "here I come" voice, played at the attack cue
+    this.tlShoot = null;
 
     const w = this.character.width, h = this.character.height;
     this.hitArea = { x: -w / 2 + 5, y: -h / 2 + 5, width: w - 10, height: h - 10 };
     this.updateShadowPosition();
   }
 
+  // Convert original top-left-corner coordinates to centre coordinates.
+  cxl(leftX) { return leftX + this.character.width / 2; }
+  cyt(topY) { return topY + this.character.height / 2; }
+
   enter() {
     this.x = CENTER_X;
-    this.y = -this.character.height;
+    this.y = this.cyt(-298); // original castAdded: top edge at -298
     this.moveFlg = true;
     this.deadFlg = false;
     this.dengerousFlg = false;
@@ -62,56 +76,104 @@ export class Boss extends BaseUnit {
   loop(delta) {
     if (this.deadFlg || this.frozen) return;
     if (this.moveFlg) {
-      const targetY = GAME_HEIGHT / 4;
-      this.y += 1 * delta;
-      if (this.y >= targetY) {
-        this.y = targetY;
+      this.y += this.enterSpeed * delta;
+      if (this.y >= this.restY) {
+        this.y = this.restY;
         this.moveFlg = false;
-        this.shootStart();
       }
       this.updateShadowPosition();
       return;
     }
-    this.bulletFrameCnt += delta;
-    if (this.shootOn && this.interval > 0 && this.bulletFrameCnt >= this.interval) {
-      this.attack();
-      this.bulletFrameCnt = 0;
+    // Original cadence: cnt starts at 0, so the first settled step cues the
+    // attack; the timeline then re-chains itself and shootOn stays false.
+    if (this.shootOn && this.bulletFrameCnt % this.interval < delta) {
+      this.shootOn = false;
+      this.attackCue();
     }
+    this.bulletFrameCnt += delta;
     this.updateShadowPosition();
   }
 
-  shootStart() { this.shootOn = true; }
-
-  // Subclasses override. Default: aimed single shot if it has bullets.
-  attack() {
-    if (!this.bulletData) return;
-    this.fire(this.bulletData, 'aimed', 'shoot');
+  attackCue() {
+    if (this.addVoice) Sound.play(this.addVoice);
+    this.scene.time.delayedCall(1000, () => {
+      if (!this.deadFlg && this.active) this.shootStart();
+    });
   }
 
-  // Emit a TAMA_ADD with the chosen bullet recipe + spawn pattern for the scene to spawn.
-  fire(bulletData, pattern, animName) {
+  // Per-boss: build and start the pattern timeline.
+  shootStart() {}
+
+  // ---- timeline helpers (GSAP TimelineMax → Phaser tween chain) ----
+  tlMove(props, seconds, onStart) {
+    return {
+      targets: this, ...props, duration: seconds * 1000, ease: 'Quad.easeOut',
+      ...(onStart ? { onStart } : {}),
+    };
+  }
+
+  // A pure callback `seconds` after the previous step (GSAP "+=s" addCallback).
+  // The dummy prop tweens from an explicit 0 so the value always changes —
+  // a no-change tween would complete instantly and collapse the delay.
+  tlCall(seconds, fn) {
+    return {
+      targets: this, _tlDummy: { from: 0, to: 1 }, duration: Math.max(1, seconds * 1000),
+      ...(fn ? { onComplete: fn } : {}),
+    };
+  }
+
+  startTimeline(tweens) {
+    this.killTimeline();
+    this.tlShoot = this.scene.tweens.chain({
+      tweens: [this.tlCall(0.5), ...tweens], // original timelines start with delay 0.5
+      onComplete: () => { if (!this.deadFlg && this.active) this.shootStart(); },
+    });
+    return this.tlShoot;
+  }
+
+  killTimeline() {
+    if (this.tlShoot) { this.tlShoot.destroy(); this.tlShoot = null; }
+  }
+
+  // Original player-chase clamp converted to centre coordinates.
+  chaseX() {
+    const p = gameState.playerRef;
+    const px = p ? p.x : CENTER_X;
+    return Phaser.Math.Clamp(px, this.hitArea.width / 2, GAME_WIDTH - this.hitArea.width / 2);
+  }
+
+  // Emit a TAMA_ADD with the chosen bullet recipe for the scene to spawn.
+  fire(bulletData, animName) {
     this.bulletData = bulletData;
-    this.pattern = pattern;
     if (animName) this.playAnim(animName, false);
+    Sound.stop('se_shoot');
+    Sound.play('se_shoot');
     this.emit(EVT.TAMA_ADD, this);
   }
 
+  // loop=false plays once and holds the last frame (patterns restore idle
+  // explicitly, as the original timelines do).
   playAnim(name, loop = true) {
     const key = this.animKeys[name];
     if (!key) return;
     this.character.play({ key, repeat: loop ? -1 : 0 });
     if (this.shadow.visible) this.shadow.play({ key, repeat: loop ? -1 : 0 });
-    if (!loop) {
-      this.character.once(Phaser.Animations.Events.ANIMATION_COMPLETE, () => {
-        if (!this.deadFlg) this.playAnim('idle', true);
-      });
-    }
+  }
+
+  stopAnim() {
+    if (this.character.anims) this.character.anims.stop();
+    if (this.shadow && this.shadow.anims) this.shadow.anims.stop();
   }
 
   onTheWorld(freeze) {
     this.frozen = freeze;
-    if (freeze) { this.character.anims.pause(); }
-    else if (this.hp > 0 && !this.deadFlg) { this.character.anims.resume(); }
+    if (freeze) {
+      this.character.anims.pause();
+      if (this.tlShoot) this.tlShoot.pause();
+    } else if (this.hp > 0 && !this.deadFlg) {
+      this.character.anims.resume();
+      if (this.tlShoot) this.tlShoot.resume();
+    }
   }
 
   onDamage(amount) {
@@ -131,6 +193,7 @@ export class Boss extends BaseUnit {
     if (this.deadFlg) return;
     this.deadFlg = true;
     this.shootOn = false;
+    this.killTimeline();
     this.emit(EVT.DEAD, this);
     this.character.anims.stop();
     if (this.dengerousBalloon) this.dengerousBalloon.setVisible(false);
@@ -161,15 +224,20 @@ export class Boss extends BaseUnit {
     Sound.play('se_explosion');
     ex.once(Phaser.Animations.Events.ANIMATION_COMPLETE, () => {
       ex.destroy();
-      this.explotionCnt++;
       if (isLast) this.finishDead();
     });
   }
 
   finishDead() {
-    this.setVisible(false);
     this.emit(EVT.DEAD_COMPLETE, this);
   }
 
+  // Subclasses override for their KO voice etc.
   onDead() {}
+
+  destroy(fromScene) {
+    this.killTimeline();
+    this.dengerousBalloon = null;
+    super.destroy(fromScene);
+  }
 }

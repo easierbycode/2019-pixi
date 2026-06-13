@@ -39,14 +39,16 @@ export class Bullet extends BaseUnit {
     const w = this.character.width, h = this.character.height;
     this.hitArea = { x: -w / 2, y: -h / 2, width: w, height: h };
 
-    // Orient the sprite along its travel direction. Art points right (0 rad) by
-    // default; sprites in ART_REST_ANGLE are drawn facing another way, so subtract
-    // the angle they already point so the nose still ends up along `this.rot`.
-    const frame0 = (Array.isArray(data.texture) ? data.texture[0] : data.texture) || '';
-    const artBase = String(frame0).replace(/\d+\.\w+$/, '');
-    const artRest = ART_REST_ANGLE[artBase] ?? 0;
-    this.character.setRotation(this.rot - artRest);
-    this.shadow.setRotation(this.rot - artRest);
+    // Only bullets that pass an explicit rotation get their art rotated — the
+    // original rotates player shots to fly up but uses enemy/boss projectile
+    // art exactly as drawn (Fang's beams get their rotation set at spawn).
+    if (data.rotation != null) {
+      const frame0 = (Array.isArray(data.texture) ? data.texture[0] : data.texture) || '';
+      const artBase = String(frame0).replace(/\d+\.\w+$/, '');
+      const artRest = ART_REST_ANGLE[artBase] ?? 0;
+      this.character.setRotation(this.rot - artRest);
+      this.shadow.setRotation(this.rot - artRest);
+    }
   }
 
   loop(delta) {
